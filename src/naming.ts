@@ -50,7 +50,8 @@ export interface KeyVars {
 /** Keeps names readable but safe for keys and URLs: no slashes, control chars or edge dots/spaces. */
 export function sanitizeName(name: string): string {
 	const cleaned = name
-		.replace(/[\\/:*?"<>|#%{}^~[\]`\u0000-\u001f]+/g, "-")
+		.replace(/[\\/:*?"<>|#%{}^~[\]`]+/g, "-")
+		.replace(/\p{Cc}+/gu, "-")
 		.replace(/\s+/g, "-")
 		.replace(/-+/g, "-")
 		.replace(/^[-.]+|[-.]+$/g, "");

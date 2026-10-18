@@ -77,7 +77,7 @@ export class R2SettingTab extends PluginSettingTab {
 			.addText((c) => c.setValue(s.accountId).onChange((v) => ((s.accountId = v.trim()), save())));
 		new Setting(containerEl).setName(t.bucket).addText((c) =>
 			c
-				.setPlaceholder("my-images")
+				.setPlaceholder("images")
 				.setValue(s.bucket)
 				.onChange((v) => ((s.bucket = v.trim()), save())),
 		);
@@ -170,7 +170,6 @@ export class R2SettingTab extends PluginSettingTab {
 			c
 				.setLimits(0.5, 1, 0.05)
 				.setValue(s.webpQuality)
-				.setDynamicTooltip()
 				.onChange((v) => ((s.webpQuality = v), save())),
 		);
 		new Setting(containerEl)

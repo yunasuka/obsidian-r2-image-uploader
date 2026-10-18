@@ -1,4 +1,4 @@
-import { Editor, MarkdownFileInfo, MarkdownView, moment, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
+import { Editor, MarkdownFileInfo, MarkdownView, moment, normalizePath, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
 import { ArchiveHost, emptyStats, RemoteArchiver, resetHostLimits } from "./archive";
 import { t } from "./i18n";
 import { ArchiveReportModal, ConfirmModal } from "./modals";
@@ -135,7 +135,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<R2UploaderSettings> | null);
 		this.settings.pending = [...(this.settings.pending ?? [])];
 		this.settings.remoteFailures = { ...(this.settings.remoteFailures ?? {}) };
 		this.settings.sources = { ...(this.settings.sources ?? {}) };
@@ -171,7 +171,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 	// ---- paste & drop ----
 
 	private onPaste(evt: ClipboardEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) {
-		if (evt.defaultPrevented || !this.settings.uploadOnPaste || !evt.clipboardData) return;
+		if (evt.defaultPrevented || !evt.clipboardData) return;
 		const files = imageFiles(evt.clipboardData.files);
 		if (!files.length) {
 			// Pasted a piece of a web page: let Obsidian convert it, then save its images.
@@ -182,7 +182,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 			return;
 		}
 		// Spreadsheets and rich text put a picture of the selection on the clipboard too.
-		if (evt.clipboardData.getData("text/plain").trim()) return;
+		if (!this.settings.uploadOnPaste || evt.clipboardData.getData("text/plain").trim()) return;
 		const client = this.client();
 		if (!client) {
 			new Notice(t.notConfigured);
@@ -342,7 +342,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 				t.migrateBackup,
 			],
 			() =>
-				this.runExclusive(async (client) => {
+				void this.runExclusive(async (client) => {
 					this.report(await this.uploadAndRelink(client, images, notes, this.settings.afterUpload === "trash"));
 				}),
 		).open();
@@ -409,8 +409,8 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 	private inWatchedFolder(path: string): boolean {
 		const folders = this.settings.archiveFolders
 			.split(/[,\n]/)
-			.map((f) => f.trim().replace(/^\/+|\/+$/g, ""))
-			.filter(Boolean);
+			.map((f) => (f.trim() ? normalizePath(f.trim()) : ""))
+			.filter((f) => f && f !== "/");
 		return !folders.length || folders.some((f) => path.startsWith(f + "/"));
 	}
 
@@ -490,7 +490,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		}
 		if (!notes.length) return void new Notice(t.noRemoteImages);
 		new ConfirmModal(this.app, t.archiveTitle, [t.archiveSummary(unique.size, notes.length), t.archiveExplain, t.archiveStopHint, t.migrateBackup], () =>
-			this.runExclusive((client) => this.archiveVault(client, notes, total)),
+			void this.runExclusive((client) => this.archiveVault(client, notes, total)),
 		).open();
 	}
 

@@ -17,7 +17,7 @@ export interface UploadOptions {
 export async function toWebp(data: ArrayBuffer, mime: string, quality: number): Promise<ArrayBuffer | null> {
 	const bitmap = await createImageBitmap(new Blob([data], { type: mime }));
 	try {
-		const canvas = document.createElement("canvas");
+		const canvas = createEl("canvas");
 		canvas.width = bitmap.width;
 		canvas.height = bitmap.height;
 		const ctx = canvas.getContext("2d");

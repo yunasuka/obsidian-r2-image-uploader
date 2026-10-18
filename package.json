@@ -1,6 +1,6 @@
 {
   "name": "r2-image-uploader",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Paste or drop images into Obsidian and upload them to Cloudflare R2 automatically.",
   "main": "main.js",
   "type": "module",
@@ -8,16 +8,28 @@
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run",
-    "install-vault": "node scripts/install-vault.mjs"
+    "install-vault": "node scripts/install-vault.mjs",
+    "lint": "eslint src"
   },
-  "keywords": ["obsidian", "cloudflare", "r2", "image", "upload"],
+  "keywords": [
+    "obsidian",
+    "cloudflare",
+    "r2",
+    "image",
+    "upload"
+  ],
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^0.14.0",
     "@types/node": "^22.0.0",
     "esbuild": "^0.25.0",
+    "eslint": "^10.13.0",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "obsidian": "1.14.4",
     "tslib": "^2.8.1",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.71.2",
     "vitest": "^3.2.0"
   }
 }

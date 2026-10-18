@@ -34,6 +34,32 @@ Clipped web pages only *link* to their images. When the author deletes the post 
 4. In Obsidian: Settings → R2 Image Uploader. Fill in Account ID, bucket, the two keys and the public URL, then press **Test** (it uploads a small file, reads it back through the public URL and deletes it).
 5. Under *Web images*, turn on automatic saving on the device you want, and check the watched folders.
 
+## How to use
+
+Once set up, it mostly runs by itself. Typical cases:
+
+**1. Clipping an article with Web Clipper**
+Clip with Obsidian Web Clipper into `Clippings`. A few seconds later the plugin downloads the article's images into your R2 bucket and shows "saved … web image(s)". The note now points at your own domain, so it survives the original post being deleted.
+> Turn on *Save web images of new notes automatically (this device)* under *Web images* first. With several devices, one computer that is usually running is enough; clippings made on your phone are handled after they sync.
+
+**2. Copying part of a web page into a note**
+Right after you paste, the images in the pasted part are saved.
+
+**3. Screenshots and dropped images**
+Paste a screenshot or drop an image file into a note: it is uploaded to R2 and a link is inserted, the file doesn't go into the vault. Offline, the image is kept locally and uploaded later.
+
+**4. Older notes**
+In the plugin settings, under *Tools*:
+- *Save web images in all notes to R2…* saves the images of everything you clipped before. It shows how many images first and only starts when you press *Start*; at the end it lists images that could not be downloaded (usually deleted at the source).
+- *Upload all local images in vault…* moves existing local images to R2.
+For a single note, open it, press `Ctrl/Cmd + P`, search "R2" and use the *current note* command.
+
+**5. Going back to the original links**
+Open the note and run *Restore original web links in current note*. The R2 copy stays, so you can save it again any time.
+
+**6. Does deleting a note delete its images?**
+No. The plugin only adds images to R2 and never deletes them, so a note restored from trash still shows its images.
+
 ## Commands
 
 The vault-wide ones are also in the plugin settings under *Tools*.
@@ -77,7 +103,7 @@ npm run install-vault -- /path/to/vault   # copy main.js, manifest.json, styles.
 
 The R2 round-trip test (`test/r2.e2e.test.ts`) runs only when a `.env.local` with `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_PUBLIC_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` exists.
 
-Releases: push a tag equal to the version in `manifest.json` (e.g. `0.2.0`); the GitHub workflow builds and attaches `main.js`, `manifest.json` and `styles.css` to a draft release.
+Releases: push a tag equal to the version in `manifest.json` (e.g. `1.0.1`); the GitHub workflow builds and attaches `main.js`, `manifest.json` and `styles.css` to a draft release.
 
 ## License
 
