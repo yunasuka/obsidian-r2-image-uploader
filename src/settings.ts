@@ -9,6 +9,10 @@ export interface R2UploaderSettings {
 	/** Names of entries in app.secretStorage, never the secrets themselves. */
 	accessKeyIdSecret: string;
 	secretAccessKeySecret: string;
+	/** Opt-in: keep the keys in data.json so they travel with the plugin to other devices. */
+	syncSecrets: boolean;
+	accessKeyId: string;
+	secretAccessKey: string;
 	publicUrl: string;
 	endpoint: string;
 	uploadOnPaste: boolean;
@@ -26,6 +30,9 @@ export const DEFAULT_SETTINGS: R2UploaderSettings = {
 	bucket: "",
 	accessKeyIdSecret: "",
 	secretAccessKeySecret: "",
+	syncSecrets: false,
+	accessKeyId: "",
+	secretAccessKey: "",
 	publicUrl: "",
 	endpoint: "",
 	uploadOnPaste: true,
@@ -64,17 +71,42 @@ export class R2SettingTab extends PluginSettingTab {
 				.onChange((v) => ((s.bucket = v.trim()), save())),
 		);
 		new Setting(containerEl)
-			.setName(t.accessKeyId)
-			.setDesc(t.secretDesc)
-			.addComponent((el) =>
-				new SecretComponent(this.app, el).setValue(s.accessKeyIdSecret).onChange((v) => ((s.accessKeyIdSecret = v ?? ""), save())),
+			.setName(t.syncSecrets)
+			.setDesc(t.syncSecretsDesc)
+			.addToggle((c) =>
+				c.setValue(s.syncSecrets).onChange(async (v) => {
+					this.moveKeys(v);
+					await save();
+					this.display();
+				}),
 			);
-		new Setting(containerEl)
-			.setName(t.secretAccessKey)
-			.setDesc(t.secretDesc)
-			.addComponent((el) =>
-				new SecretComponent(this.app, el).setValue(s.secretAccessKeySecret).onChange((v) => ((s.secretAccessKeySecret = v ?? ""), save())),
-			);
+		if (s.syncSecrets) {
+			const plain = (name: string, key: "accessKeyId" | "secretAccessKey") =>
+				new Setting(containerEl)
+					.setName(name)
+					.setDesc(t.plainKeyDesc)
+					.addText((c) => {
+						c.inputEl.type = "password";
+						c.setValue(s[key]).onChange((v) => ((s[key] = v.trim()), save()));
+					});
+			plain(t.accessKeyId, "accessKeyId");
+			plain(t.secretAccessKey, "secretAccessKey");
+		} else {
+			new Setting(containerEl)
+				.setName(t.accessKeyId)
+				.setDesc(t.secretDesc)
+				.addComponent((el) =>
+					new SecretComponent(this.app, el).setValue(s.accessKeyIdSecret).onChange((v) => ((s.accessKeyIdSecret = v ?? ""), save())),
+				);
+			new Setting(containerEl)
+				.setName(t.secretAccessKey)
+				.setDesc(t.secretDesc)
+				.addComponent((el) =>
+					new SecretComponent(this.app, el)
+						.setValue(s.secretAccessKeySecret)
+						.onChange((v) => ((s.secretAccessKeySecret = v ?? ""), save())),
+				);
+		}
 		new Setting(containerEl)
 			.setName(t.publicUrl)
 			.setDesc(t.publicUrlDesc)
@@ -141,6 +173,12 @@ export class R2SettingTab extends PluginSettingTab {
 					.onChange((v) => ((s.afterUpload = v as R2UploaderSettings["afterUpload"]), save())),
 			);
 
+		new Setting(containerEl).setName(t.secTools).setHeading();
+		new Setting(containerEl)
+			.setName(t.cmdUploadVault)
+			.setDesc(t.uploadVaultDesc)
+			.addButton((b) => b.setButtonText(t.open).onClick(() => this.plugin.confirmUploadVault()));
+
 		if (s.pending.length) {
 			new Setting(containerEl).setName(t.pendingCount(s.pending.length)).addButton((b) =>
 				b.setButtonText(t.cmdRetry).onClick(async () => {
@@ -149,6 +187,28 @@ export class R2SettingTab extends PluginSettingTab {
 				}),
 			);
 		}
+	}
+
+	/** Carries the keys over when switching between secret storage and data.json. */
+	private moveKeys(toDataJson: boolean) {
+		const s = this.plugin.settings;
+		const store = this.app.secretStorage;
+		if (toDataJson) {
+			s.accessKeyId ||= (s.accessKeyIdSecret && store.getSecret(s.accessKeyIdSecret)) || "";
+			s.secretAccessKey ||= (s.secretAccessKeySecret && store.getSecret(s.secretAccessKeySecret)) || "";
+		} else {
+			if (s.accessKeyId) {
+				s.accessKeyIdSecret ||= "r2-access-key-id";
+				store.setSecret(s.accessKeyIdSecret, s.accessKeyId);
+			}
+			if (s.secretAccessKey) {
+				s.secretAccessKeySecret ||= "r2-secret-access-key";
+				store.setSecret(s.secretAccessKeySecret, s.secretAccessKey);
+			}
+			s.accessKeyId = "";
+			s.secretAccessKey = "";
+		}
+		s.syncSecrets = toDataJson;
 	}
 
 	private async testConnection(): Promise<string> {

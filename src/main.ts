@@ -104,12 +104,17 @@ export default class R2ImageUploader extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	/** data.json was changed by sync from another device. */
+	async onExternalSettingsChange() {
+		await this.loadSettings();
+	}
+
 	/** A client for the current settings, or null if something is missing. */
 	client(): R2Client | null {
 		const s = this.settings;
 		const read = (name: string) => (name ? this.app.secretStorage.getSecret(name) : null);
-		const accessKeyId = read(s.accessKeyIdSecret);
-		const secretAccessKey = read(s.secretAccessKeySecret);
+		const accessKeyId = s.syncSecrets ? s.accessKeyId : read(s.accessKeyIdSecret);
+		const secretAccessKey = s.syncSecrets ? s.secretAccessKey : read(s.secretAccessKeySecret);
 		if (!(s.accountId || s.endpoint) || !s.bucket || !s.publicUrl || !accessKeyId || !secretAccessKey) return null;
 		return new R2Client(
 			{ accountId: s.accountId, bucket: s.bucket, endpoint: s.endpoint, credentials: { accessKeyId, secretAccessKey } },
@@ -275,7 +280,7 @@ export default class R2ImageUploader extends Plugin {
 		});
 	}
 
-	private confirmUploadVault() {
+	confirmUploadVault() {
 		const { images, notes } = collectLocalImages(this.app, this.app.vault.getMarkdownFiles());
 		if (!images.length) return void new Notice(t.noLocalImages);
 		const mb = (images.reduce((sum, f) => sum + f.stat.size, 0) / 1024 / 1024).toFixed(1);

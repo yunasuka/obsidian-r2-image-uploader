@@ -58,6 +58,14 @@ const en = {
 	afterTrash: "Move to trash",
 
 	pendingCount: (n: number) => `${n} image(s) waiting for re-upload.`,
+
+	syncSecrets: "Sync keys with the vault",
+	syncSecretsDesc:
+		"Off: keys stay in this device's secret storage and must be entered on every device. On: keys are saved in plain text in the plugin's data.json and travel with Obsidian Sync (or any file sync / git) together with the plugin. Only turn on if that sync is private, and use a token limited to the image bucket.",
+	plainKeyDesc: "Saved in data.json (synced).",
+	secTools: "Tools",
+	uploadVaultDesc: "Uploads every local image embedded in your notes and rewrites the embeds. Shows a summary before anything changes.",
+	open: "Open…",
 };
 
 const zh: typeof en = {
@@ -116,6 +124,14 @@ const zh: typeof en = {
 	afterTrash: "移到回收站",
 
 	pendingCount: (n) => `有 ${n} 张图等待补传。`,
+
+	syncSecrets: "密钥随库同步",
+	syncSecretsDesc:
+		"关：密钥存在本机 Obsidian 的密钥存储里，每台设备都要填一次。开：密钥以明文存进插件的 data.json，跟着插件一起被 Obsidian 同步（或网盘、git）带到其他设备。只在同步渠道是自己私有的情况下打开，并且用只能访问图床存储桶的令牌。",
+	plainKeyDesc: "保存在 data.json 里（会同步）。",
+	secTools: "工具",
+	uploadVaultDesc: "把所有笔记里嵌入的本地图片上传到 R2 并改成链接。执行前会先显示要改动的数量。",
+	open: "打开…",
 };
 
 export const t: typeof en = getLanguage().toLowerCase().startsWith("zh") ? zh : en;

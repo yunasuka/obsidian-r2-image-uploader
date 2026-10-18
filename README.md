@@ -17,7 +17,7 @@ Paste or drop an image into a note and it is uploaded to your own [Cloudflare R2
 1. **Create a bucket** in the Cloudflare dashboard (R2 Object Storage → Create bucket).
 2. **Make it publicly readable**: bucket → Settings → Custom Domains → connect a (sub)domain on Cloudflare, e.g. `img.example.com`. The `r2.dev` URL also works but is rate limited and meant for testing.
 3. **Create an API token**: R2 → Manage API tokens → Create Account API token → permission *Object Read & Write*, limited to that bucket. Copy the *Access Key ID* and *Secret Access Key*.
-4. In Obsidian: Settings → R2 Image Uploader. Fill in Account ID, bucket, the two keys and the public URL, then press **Test** (it uploads a small file, reads it back through the public URL and deletes it).
+4. In Obsidian: Settings → R2 Image Uploader (the vault-wide upload is also available there under *Tools*). Fill in Account ID, bucket, the two keys and the public URL, then press **Test** (it uploads a small file, reads it back through the public URL and deletes it).
 
 ## Commands
 
@@ -39,7 +39,7 @@ With `{hash}` in the template an image that already exists is not uploaded again
 
 - **Network use**: the plugin only talks to your R2 S3 endpoint (`https://<account id>.r2.cloudflarestorage.com` or the endpoint you set) and to your public URL (only for *Test connection*). No telemetry.
 - **Uploaded images are public to anyone who has the link.** R2 does not let visitors list a bucket, and hash names cannot be guessed, but do not upload anything you would not share by link.
-- Keys are stored with Obsidian's secret storage on each device (you enter them once per device). Use a token that is limited to the image bucket.
+- Keys are stored with Obsidian's secret storage on each device by default (you enter them once per device). Optionally turn on *Sync keys with the vault*: the keys are then kept in plain text in the plugin's `data.json` and reach your other devices together with the plugin (Obsidian Sync with community plugins enabled, a file sync tool, git…). Only do that if the sync is private. Either way, use a token that is limited to the image bucket.
 
 ## Development
 
