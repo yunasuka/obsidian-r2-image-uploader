@@ -9,7 +9,7 @@ Paste or drop an image into a note and it is uploaded to your own [Cloudflare R2
 - **Content-hash file names** (`{hash}.{ext}` by default): the same image is stored once, links never change
 - **Optional WebP conversion** before upload (kept only if it is actually smaller; GIF/SVG untouched)
 - **Upload local images** of the current note, or of the whole vault (with a preview of what will change); embed size and alt text are kept (`![[a.png|300]]` → `![|300](https://…)`)
-- **Credentials stay on the device**: keys live in Obsidian's secret storage, not in `data.json`, so they are not synced with the vault
+- **Credentials stay on the device** by default: keys live in Obsidian's secret storage, not in `data.json`. Optional *Sync keys with the vault* if you'd rather enter them once
 - Works on desktop and mobile; no dependencies, small SigV4 signer on Web Crypto; uses Obsidian's `requestUrl`, so the bucket needs no CORS rules
 
 ## Setup
