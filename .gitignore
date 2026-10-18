@@ -6,3 +6,4 @@ data.json
 # 本机用的说明（含个人路径、账号信息），不进公开仓库
 CLAUDE.md
 local/
+.playwright-mcp/
