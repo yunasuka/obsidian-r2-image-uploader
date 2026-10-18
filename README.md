@@ -103,7 +103,11 @@ npm run install-vault -- /path/to/vault   # copy main.js, manifest.json, styles.
 
 The R2 round-trip test (`test/r2.e2e.test.ts`) runs only when a `.env.local` with `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_PUBLIC_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` exists.
 
-Releases: push a tag equal to the version in `manifest.json` (e.g. `1.0.1`); the GitHub workflow builds and attaches `main.js`, `manifest.json` and `styles.css` to a draft release.
+Releases: bump `version` in `manifest.json`, `package.json` and `versions.json`, run `npm run build`, then create a GitHub release whose tag equals the version (e.g. `1.0.1`) with `main.js`, `manifest.json` and `styles.css` attached:
+
+```bash
+gh release create 1.0.1 main.js manifest.json styles.css --title 1.0.1 --notes "..."
+```
 
 ## License
 

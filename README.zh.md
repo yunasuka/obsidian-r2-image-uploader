@@ -103,7 +103,11 @@ npm run install-vault -- /path/to/vault   # 把 main.js、manifest.json、styles
 
 R2 真实往返测试（`test/r2.e2e.test.ts`）只在存在 `.env.local`（含 `R2_ACCOUNT_ID`、`R2_BUCKET`、`R2_PUBLIC_URL`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`）时运行。
 
-发版：推一个和 `manifest.json` 里版本号相同的 tag（比如 `1.0.1`），GitHub workflow 会构建并把 `main.js`、`manifest.json`、`styles.css` 挂到一个草稿 Release 上。
+发版：改 `manifest.json`、`package.json`、`versions.json` 里的版本号，`npm run build`，再建一个 tag 和版本号相同的 GitHub Release（比如 `1.0.1`），附上 `main.js`、`manifest.json`、`styles.css`：
+
+```bash
+gh release create 1.0.1 main.js manifest.json styles.css --title 1.0.1 --notes "..."
+```
 
 ## 许可证
 
