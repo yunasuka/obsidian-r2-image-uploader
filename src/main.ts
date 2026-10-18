@@ -15,6 +15,7 @@ const CONCURRENCY = 3;
 const AUTO_DELAY_MS = 5000;
 /** On startup, notes in the watched folders changed within this window are checked. */
 const STARTUP_SCAN_DAYS = 14;
+// Kept from before the plugin ID changed, so existing devices keep their choice.
 const AUTO_ARCHIVE_KEY = "r2-image-uploader-auto-archive";
 
 // requestUrl goes through Electron / the native layer, so the bucket needs no CORS rules.

@@ -1,6 +1,6 @@
 {
-  "name": "r2-image-uploader",
-  "version": "1.0.0",
+  "name": "cloudflare-image-uploader",
+  "version": "1.0.1",
   "description": "Paste or drop images into Obsidian and upload them to Cloudflare R2 automatically.",
   "main": "main.js",
   "type": "module",
