@@ -1,0 +1,133 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Go to the Obsidian Community home page" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e28]:
+        - generic [aria-hidden]:
+          - generic: Search plugins and themes...
+        - combobox [ref=e29]
+      - link "Sign in" [ref=e31] [cursor=pointer]:
+        - /url: /auth/login?returnTo=%2Fplugins
+  - main [ref=e32]
+  - contentinfo [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - list [ref=e36]:
+          - listitem [ref=e37]: Get started
+          - listitem [ref=e38]:
+            - link "Download" [ref=e39] [cursor=pointer]:
+              - /url: https://obsidian.md/download
+          - listitem [ref=e40]:
+            - link "Pricing" [ref=e41] [cursor=pointer]:
+              - /url: https://obsidian.md/pricing
+          - listitem [ref=e42]:
+            - link "Enterprise" [ref=e43] [cursor=pointer]:
+              - /url: https://obsidian.md/enterprise
+          - listitem [ref=e44]:
+            - link "Account" [ref=e45] [cursor=pointer]:
+              - /url: https://obsidian.md/account
+        - list [ref=e46]:
+          - listitem [ref=e47]: Obsidian
+          - listitem [ref=e48]:
+            - link "Overview" [ref=e49] [cursor=pointer]:
+              - /url: https://obsidian.md
+          - listitem [ref=e50]:
+            - link "Sync" [ref=e51] [cursor=pointer]:
+              - /url: https://obsidian.md/sync
+          - listitem [ref=e52]:
+            - link "Publish" [ref=e53] [cursor=pointer]:
+              - /url: https://obsidian.md/publish
+          - listitem [ref=e54]:
+            - link "Canvas" [ref=e55] [cursor=pointer]:
+              - /url: https://obsidian.md/canvas
+          - listitem [ref=e56]:
+            - link "Mobile" [ref=e57] [cursor=pointer]:
+              - /url: https://obsidian.md/mobile
+          - listitem [ref=e58]:
+            - link "Web Clipper" [ref=e59] [cursor=pointer]:
+              - /url: https://obsidian.md/clipper
+          - listitem [ref=e60]:
+            - link "CLI" [ref=e61] [cursor=pointer]:
+              - /url: https://obsidian.md/cli
+      - generic [ref=e62]:
+        - list [ref=e63]:
+          - listitem [ref=e64]: Learn
+          - listitem [ref=e65]:
+            - link "Help" [ref=e66] [cursor=pointer]:
+              - /url: https://obsidian.md/help/
+          - listitem [ref=e67]:
+            - link "Developers" [ref=e68] [cursor=pointer]:
+              - /url: https://docs.obsidian.md/
+          - listitem [ref=e69]:
+            - link "Changelog" [ref=e70] [cursor=pointer]:
+              - /url: https://obsidian.md/changelog
+          - listitem [ref=e71]:
+            - link "About" [ref=e72] [cursor=pointer]:
+              - /url: https://obsidian.md/about
+          - listitem [ref=e73]:
+            - link "Roadmap" [ref=e74] [cursor=pointer]:
+              - /url: https://obsidian.md/roadmap
+          - listitem [ref=e75]:
+            - link "Blog" [ref=e76] [cursor=pointer]:
+              - /url: https://obsidian.md/blog
+        - list [ref=e77]:
+          - listitem [ref=e78]: Resources
+          - listitem [ref=e79]:
+            - link "System status" [ref=e80] [cursor=pointer]:
+              - /url: https://status.obsidian.md
+          - listitem [ref=e81]:
+            - link "License overview" [ref=e82] [cursor=pointer]:
+              - /url: https://obsidian.md/license
+          - listitem [ref=e83]:
+            - link "Terms of service" [ref=e84] [cursor=pointer]:
+              - /url: https://obsidian.md/terms
+          - listitem [ref=e85]:
+            - link "Privacy policy" [ref=e86] [cursor=pointer]:
+              - /url: https://obsidian.md/privacy
+          - listitem [ref=e87]:
+            - link "Security" [ref=e88] [cursor=pointer]:
+              - /url: https://obsidian.md/security
+      - list [ref=e90]:
+        - listitem [ref=e91]: Community
+        - listitem [ref=e92]:
+          - link "Plugins" [ref=e93] [cursor=pointer]:
+            - /url: /plugins
+        - listitem [ref=e94]:
+          - link "Themes" [ref=e95] [cursor=pointer]:
+            - /url: /themes
+        - listitem [ref=e96]:
+          - link "Discord" [ref=e97] [cursor=pointer]:
+            - /url: https://discord.gg/obsidianmd
+        - listitem [ref=e98]:
+          - link "Forum" [ref=e99] [cursor=pointer]:
+            - /url: https://forum.obsidian.md
+          - text: /
+          - link "中文论坛" [ref=e100] [cursor=pointer]:
+            - /url: https://forum-zh.obsidian.md
+        - listitem [ref=e101]:
+          - link "Merch store" [ref=e102] [cursor=pointer]:
+            - /url: https://obsidian.md/softwear
+        - listitem [ref=e103]:
+          - link "Brand guidelines" [ref=e104] [cursor=pointer]:
+            - /url: https://obsidian.md/brand
+    - generic [ref=e105]:
+      - link "Go to the Obsidian home page" [ref=e106] [cursor=pointer]:
+        - /url: https://obsidian.md
+      - generic [ref=e123]: Follow us
+      - generic [ref=e124]:
+        - link "Discord" [ref=e125] [cursor=pointer]:
+          - /url: https://discord.com/invite/obsidianmd
+        - link "Twitter" [ref=e126] [cursor=pointer]:
+          - /url: https://x.com/obsdmd
+        - link "Bluesky" [ref=e127] [cursor=pointer]:
+          - /url: https://bsky.app/profile/obsidian.md
+        - link "Threads" [ref=e128] [cursor=pointer]:
+          - /url: https://www.threads.net/@obsdmd
+        - link "Mastodon" [ref=e129] [cursor=pointer]:
+          - /url: https://mas.to/@obsidian
+        - link "YouTube" [ref=e130] [cursor=pointer]:
+          - /url: https://www.youtube.com/@obsdmd
+        - link "GitHub" [ref=e131] [cursor=pointer]:
+          - /url: https://github.com/obsidianmd
+      - generic [ref=e132]: © 2026 Obsidian

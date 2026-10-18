@@ -2,7 +2,7 @@ import { getLanguage } from "obsidian";
 
 const en = {
 	uploading: "Uploading",
-	notConfigured: "R2 Image Uploader: fill in the R2 settings first.",
+	notConfigured: "Cloudflare Image Uploader: fill in the R2 settings first.",
 	uploadFailedSaved: (n: number) => `Upload failed, ${n} image(s) saved locally. They will be uploaded again automatically. `,
 	retryDone: (ok: number, left: number) => `R2: re-uploaded ${ok} image(s)` + (left ? `, ${left} still waiting` : ""),
 	noPending: "R2: nothing waiting to be uploaded.",
@@ -116,7 +116,7 @@ const en = {
 
 const zh: typeof en = {
 	uploading: "上传中",
-	notConfigured: "R2 Image Uploader：请先在设置里填好 R2 信息。",
+	notConfigured: "Cloudflare Image Uploader：请先在设置里填好 R2 信息。",
 	uploadFailedSaved: (n) => `上传失败，${n} 张图先存在本地了，之后会自动补传。`,
 	retryDone: (ok, left) => `R2：补传了 ${ok} 张图` + (left ? `，还有 ${left} 张待传` : ""),
 	noPending: "R2：没有等待补传的图片。",

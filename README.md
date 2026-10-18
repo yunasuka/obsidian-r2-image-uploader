@@ -1,4 +1,4 @@
-# R2 Image Uploader
+# Cloudflare Image Uploader
 
 [中文说明](README.zh.md)
 
@@ -31,7 +31,7 @@ Clipped web pages only *link* to their images. When the author deletes the post 
 1. **Create a bucket** in the Cloudflare dashboard (R2 Object Storage → Create bucket).
 2. **Make it publicly readable**: bucket → Settings → Custom Domains → connect a (sub)domain on Cloudflare, e.g. `img.example.com`. The `r2.dev` URL also works but is rate limited and meant for testing.
 3. **Create an API token**: R2 → Manage API tokens → Create Account API token → permission *Object Read & Write*, limited to that bucket. Copy the *Access Key ID* and *Secret Access Key*.
-4. In Obsidian: Settings → R2 Image Uploader. Fill in Account ID, bucket, the two keys and the public URL, then press **Test** (it uploads a small file, reads it back through the public URL and deletes it).
+4. In Obsidian: Settings → Cloudflare Image Uploader. Fill in Account ID, bucket, the two keys and the public URL, then press **Test** (it uploads a small file, reads it back through the public URL and deletes it).
 5. Under *Web images*, turn on automatic saving on the device you want, and check the watched folders.
 
 ## How to use

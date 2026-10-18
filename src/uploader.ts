@@ -42,7 +42,7 @@ export async function uploadImage(client: R2Client, opts: UploadOptions, data: A
 				type = "image/webp";
 			}
 		} catch (e) {
-			console.warn("R2 Image Uploader: WebP conversion failed, uploading original", e);
+			console.warn("Cloudflare Image Uploader: WebP conversion failed, uploading original", e);
 		}
 	}
 	const hash = await sha256Hex(body);

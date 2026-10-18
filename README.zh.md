@@ -1,4 +1,4 @@
-# R2 Image Uploader
+# Cloudflare Image Uploader
 
 [English](README.md)
 
@@ -31,7 +31,7 @@
 1. **建存储桶**：Cloudflare 后台 → R2 对象存储 → 创建存储桶。
 2. **开公开访问**：存储桶 → 设置 → 自定义域 → 绑一个托管在 Cloudflare 上的（子）域名，比如 `img.example.com`。`r2.dev` 地址也能用，但有限速，只适合测试。
 3. **建 API 令牌**：R2 → 管理 API 令牌 → 创建帐户 API 令牌 → 权限选「对象读和写」，只给这个存储桶。记下「访问密钥 ID」和「机密访问密钥」。
-4. 在 Obsidian：设置 → R2 Image Uploader，填账户 ID、存储桶、两个密钥和公开访问地址，点「测试」（会上传一个小文件，从公开地址读回来，再删掉）。
+4. 在 Obsidian：设置 → Cloudflare Image Uploader，填账户 ID、存储桶、两个密钥和公开访问地址，点「测试」（会上传一个小文件，从公开地址读回来，再删掉）。
 5. 在「网络图片」里，在想用的设备上打开自动转存，确认监视的文件夹。
 
 ## 使用方法

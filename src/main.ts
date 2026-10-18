@@ -223,7 +223,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 				try {
 					replacement = imageMarkdown(await uploadImage(client, this.uploadOptions(), data, mime, file.name));
 				} catch (e) {
-					console.error("R2 Image Uploader: upload failed", e);
+					console.error("Cloudflare Image Uploader: upload failed", e);
 					errors.push(errorText(e));
 					const name = pasted ? `Pasted image ${moment().format("YYYYMMDDHHmmss")}.${extFromMime(mime, file.name)}` : file.name;
 					replacement = await this.saveLocally(data, name, note);
@@ -276,7 +276,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 					const data = await this.app.vault.readBinary(file);
 					urls.set(file.path, await uploadImage(client, this.uploadOptions(), data, mimeFromExt(file.extension), file.name));
 				} catch (error) {
-					console.error(`R2 Image Uploader: failed to upload ${file.path}`, error);
+					console.error(`Cloudflare Image Uploader: failed to upload ${file.path}`, error);
 					failed.push({ file, error });
 				}
 				progress?.setMessage(t.progress(++done, images.length));
@@ -437,7 +437,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		if (!client || !this.app.vault.getFileByPath(note.path)) return;
 		const stats = emptyStats();
 		await this.archiver.archiveNote(client, note, stats, { includeGivenUp: false });
-		if (stats.failed.length) console.warn("R2 Image Uploader: could not save", stats.failed);
+		if (stats.failed.length) console.warn("Cloudflare Image Uploader: could not save", stats.failed);
 		if (stats.notes) new Notice(t.autoArchived(stats.saved, note.basename, stats.failed.length), 5000);
 	}
 
