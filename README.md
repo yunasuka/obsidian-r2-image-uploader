@@ -12,6 +12,7 @@ Clipped web pages only *link* to their images. When the author deletes the post 
 - **Automatic for new clippings**: when a note appears in a watched folder (default `Clippings`, where Obsidian Web Clipper saves), its web images are saved to R2 a few seconds later. Notes synced in from your phone are handled too. This is a per-device switch: turn it on on one computer that is usually running.
 - **After pasting part of a web page**, its images are saved right away.
 - **Commands** for the current note and for the whole vault (with a summary first and a report of images that could not be downloaded; those keep their original link).
+- **The original address is remembered** for every saved image (in the plugin's `data.json`); the command *Restore original web links in current note* puts them back (your R2 copy stays).
 - Polite downloading: at most 2 requests per site at a time, waits and retries when rate limited, a browser user agent and referer fallback for hotlink protection. Links inside code blocks are left alone.
 
 **Local images**
@@ -44,6 +45,7 @@ The vault-wide ones are also in the plugin settings under *Tools*.
 | Upload local images in current note | Uploads local images embedded in the note and rewrites the embeds |
 | Upload all local images in vault… | Same for every note, after a summary |
 | Retry failed uploads | Re-uploads images saved locally because an upload failed |
+| Restore original web links in current note | Swaps saved images back to the web addresses they came from |
 | Stop the running job | Stops a vault-wide run after the current note; run again to continue |
 
 Images that fail twice are skipped by automatic runs (manual commands still try them; the counter can be cleared in settings). Rate limits and network errors don't count as failures.

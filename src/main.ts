@@ -2,6 +2,7 @@ import { Editor, MarkdownFileInfo, MarkdownView, moment, Notice, Plugin, request
 import { ArchiveHost, emptyStats, RemoteArchiver, resetHostLimits } from "./archive";
 import { t } from "./i18n";
 import { ArchiveReportModal, ConfirmModal } from "./modals";
+import { findRemoteImages } from "./remote";
 import { extFromMime, imageMarkdown, mimeFromExt } from "./naming";
 import { HttpFn, R2Client } from "./r2";
 import { collectLocalImages, notesReferencing, rewriteNote, stillReferenced } from "./relink";
@@ -91,6 +92,16 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 			},
 		});
 		this.addCommand({ id: "archive-vault", name: t.cmdArchiveVault, callback: () => this.confirmArchiveVault() });
+		this.addCommand({
+			id: "restore-original-links",
+			name: t.cmdRestore,
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension !== "md") return false;
+				if (!checking) void this.restoreOriginalLinks(file);
+				return true;
+			},
+		});
 		this.addCommand({ id: "stop", name: t.cmdStop, callback: () => (this.stopRequested = true) });
 
 		// Keep the retry list in step with renames and deletions done by the user.
@@ -127,6 +138,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.settings.pending = [...(this.settings.pending ?? [])];
 		this.settings.remoteFailures = { ...(this.settings.remoteFailures ?? {}) };
+		this.settings.sources = { ...(this.settings.sources ?? {}) };
 	}
 
 	async saveSettings() {
@@ -360,6 +372,24 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 
 	async saveFailures() {
 		await this.saveSettings();
+	}
+
+	recordSource(r2Url: string, source: string) {
+		this.settings.sources[r2Url] ??= source;
+	}
+
+	/** Puts the original web addresses back for images that were saved from the web. */
+	async restoreOriginalLinks(note: TFile) {
+		const text = await this.app.vault.read(note);
+		const map = new Map<string, string>();
+		for (const img of findRemoteImages(text)) {
+			const source = this.settings.sources[img.url];
+			if (source && /^https?:\/\//.test(source)) map.set(img.url, source);
+		}
+		if (!map.size) return void new Notice(t.nothingToRestore);
+		// Treat nothing as "own" so the R2 links themselves are found and replaced.
+		await this.archiver.apply(note, map, () => false);
+		new Notice(t.restored(map.size), 6000);
 	}
 
 	isOwnUrl(url: string): boolean {

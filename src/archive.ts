@@ -92,6 +92,8 @@ export interface ArchiveHost {
 	failures(): Record<string, number>;
 	saveFailures(): Promise<void>;
 	isOwnUrl(url: string): boolean;
+	/** Remembers where an R2 copy came from (saved together with the failures). */
+	recordSource(r2Url: string, source: string): void;
 }
 
 async function download(url: string): Promise<{ data: ArrayBuffer; mime: string }> {
@@ -163,6 +165,7 @@ export class RemoteArchiver {
 							stats.saved++;
 						}
 						map.set(url, saved);
+						this.host.recordSource(saved, url);
 						delete failures[url];
 					} catch (e) {
 						if (e instanceof NotAnImage) failures[url] = NOT_IMAGE;
@@ -186,8 +189,7 @@ export class RemoteArchiver {
 	}
 
 	/** Writes the new URLs, through the editor when the note is open so typing isn't clobbered. */
-	private async apply(note: TFile, map: Map<string, string>) {
-		const isOwn = (u: string) => this.host.isOwnUrl(u);
+	async apply(note: TFile, map: Map<string, string>, isOwn: (url: string) => boolean = (u) => this.host.isOwnUrl(u)) {
 		for (const leaf of this.host.app.workspace.getLeavesOfType("markdown")) {
 			const view = leaf.view;
 			if (!(view instanceof MarkdownView) || view.file !== note || view.getMode() !== "source") continue;

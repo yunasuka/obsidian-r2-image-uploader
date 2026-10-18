@@ -26,6 +26,8 @@ export interface R2UploaderSettings {
 	archiveOnPaste: boolean;
 	/** Web image URL → failed download attempts. */
 	remoteFailures: Record<string, number>;
+	/** R2 URL → the web address the image was saved from, so links can always be restored. */
+	sources: Record<string, string>;
 	/** Vault paths of images saved locally because their upload failed. */
 	pending: string[];
 }
@@ -49,6 +51,7 @@ export const DEFAULT_SETTINGS: R2UploaderSettings = {
 	archiveFolders: "Clippings",
 	archiveOnPaste: true,
 	remoteFailures: {},
+	sources: {},
 	pending: [],
 };
 
@@ -199,6 +202,8 @@ export class R2SettingTab extends PluginSettingTab {
 			.setName(t.archiveOnPaste)
 			.setDesc(t.archiveOnPasteDesc)
 			.addToggle((c) => c.setValue(s.archiveOnPaste).onChange((v) => ((s.archiveOnPaste = v), save())));
+		const recorded = Object.keys(s.sources).length;
+		if (recorded) new Setting(containerEl).setDesc(t.sourcesRecorded(recorded));
 		const givenUp = Object.values(s.remoteFailures).filter((n) => n >= GIVE_UP_AFTER && n < NOT_IMAGE).length;
 		if (givenUp) {
 			new Setting(containerEl).setDesc(t.givenUp(givenUp)).addButton((b) =>

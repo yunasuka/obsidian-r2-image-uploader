@@ -99,6 +99,10 @@ const en = {
 	givenUp: (n: number) => `${n} web image(s) failed twice and are skipped by automatic runs (manual commands still try them).`,
 	clearFailures: "Clear",
 	archiveVaultDesc: "Downloads the web images in every note into R2 and rewrites the links. Shows a summary first.",
+	cmdRestore: "Restore original web links in current note",
+	nothingToRestore: "R2: no saved web images with a known original link in this note.",
+	restored: (n: number) => `R2: restored ${n} original link(s). Your R2 copies are kept.`,
+	sourcesRecorded: (n: number) => `The original web address of ${n} saved image(s) is recorded; “Restore original web links in current note” puts them back.`,
 	reason: (raw: string) => {
 		const code = Number(/HTTP (\d+)/.exec(raw)?.[1]);
 		if (code === 404 || code === 410) return `deleted (${code})`;
@@ -206,6 +210,10 @@ const zh: typeof en = {
 	givenUp: (n) => `有 ${n} 张网络图片已经失败两次，自动转存会跳过它们（手动命令仍会再试）。`,
 	clearFailures: "清空",
 	archiveVaultDesc: "把所有笔记里的网络图片下载下来存进 R2，并改写链接。执行前会先显示数量。",
+	cmdRestore: "把当前笔记的图片换回原网络链接",
+	nothingToRestore: "R2：这篇笔记里没有记录过原链接的转存图片。",
+	restored: (n) => `R2：换回了 ${n} 个原链接，R2 里的副本仍然保留。`,
+	sourcesRecorded: (n) => `已记录 ${n} 张转存图片的原网络地址，用命令「把当前笔记的图片换回原网络链接」可以换回去。`,
 	reason: (raw) => {
 		const code = Number(/HTTP (\d+)/.exec(raw)?.[1]);
 		if (code === 404 || code === 410) return `已删除（${code}）`;
