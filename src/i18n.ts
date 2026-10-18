@@ -66,6 +66,48 @@ const en = {
 	secTools: "Tools",
 	uploadVaultDesc: "Uploads every local image embedded in your notes and rewrites the embeds. Shows a summary before anything changes.",
 	open: "Open…",
+
+	cmdArchiveNote: "Save web images in current note to R2",
+	cmdArchiveVault: "Save web images in all notes to R2…",
+	cmdStop: "Stop the running job",
+	noRemoteImages: "R2: no web images to save.",
+	scanning: "R2: scanning notes…",
+	archiveTitle: "Save web images to R2",
+	archiveSummary: (images: number, notes: number) => `${images} web image(s) in ${notes} note(s) will be downloaded, uploaded to your bucket, and the notes will point to your copies.`,
+	archiveExplain: "Images that can no longer be downloaded keep their original link and are listed at the end.",
+	archiveStopHint: "This can take a while. Use the command “Stop the running job” to stop; finished notes stay done, and running it again continues with the rest.",
+	archiveProgress: (done: number, total: number) => `R2: saving web images ${done}/${total}…`,
+	stopping: "R2: stopping after the current note…",
+	archiveDone: (saved: number, notes: number, failed: number) =>
+		`Saved ${saved} image(s), updated ${notes} note(s).` + (failed ? ` ${failed} image(s) could not be downloaded.` : ""),
+	archiveCancelled: "(stopped early)",
+	archiveReportTitle: "Web images saved",
+	archiveFailedHint: "These kept their original link (usually the source has deleted them or blocks downloads):",
+	archiveMore: (n: number) => `…and ${n} more. Use “Copy list” for everything.`,
+	copyList: "Copy list",
+	copied: "Copied.",
+	autoArchived: (saved: number, note: string, failed: number) => `R2: saved ${saved} web image(s) in “${note}”` + (failed ? `, ${failed} failed` : ""),
+
+	secRemote: "Web images",
+	autoArchive: "Save web images of new notes automatically (this device)",
+	autoArchiveDesc:
+		"When a new note appears in the folders below (Web Clipper, or synced from another device), its web images are saved to R2. Stored per device: turning it on on one computer that is often running is enough.",
+	archiveFolders: "Watched folders",
+	archiveFoldersDesc: "Comma separated. Empty means the whole vault.",
+	archiveOnPaste: "Save web images after pasting from a web page",
+	archiveOnPasteDesc: "When you paste part of a web page into a note, its images are saved to R2 right after.",
+	givenUp: (n: number) => `${n} web image(s) failed twice and are skipped by automatic runs (manual commands still try them).`,
+	clearFailures: "Clear",
+	archiveVaultDesc: "Downloads the web images in every note into R2 and rewrites the links. Shows a summary first.",
+	reason: (raw: string) => {
+		const code = Number(/HTTP (\d+)/.exec(raw)?.[1]);
+		if (code === 404 || code === 410) return `deleted (${code})`;
+		if (code === 401 || code === 403) return `download refused (${code})`;
+		if (code === 429) return "rate limited, will retry next run";
+		if (code >= 500) return `server error (${code}), will retry next run`;
+		if (raw.startsWith("too large")) return raw;
+		return code ? `HTTP ${code}` : `network error, will retry next run (${raw})`;
+	},
 };
 
 const zh: typeof en = {
@@ -132,6 +174,47 @@ const zh: typeof en = {
 	secTools: "工具",
 	uploadVaultDesc: "把所有笔记里嵌入的本地图片上传到 R2 并改成链接。执行前会先显示要改动的数量。",
 	open: "打开…",
+
+	cmdArchiveNote: "把当前笔记的网络图片转存到 R2",
+	cmdArchiveVault: "把所有笔记的网络图片转存到 R2…",
+	cmdStop: "停止正在进行的任务",
+	noRemoteImages: "R2：没有需要转存的网络图片。",
+	scanning: "R2：正在扫描笔记…",
+	archiveTitle: "把网络图片转存到 R2",
+	archiveSummary: (images, notes) => `将下载 ${images} 张网络图片（在 ${notes} 篇笔记里），传到你的存储桶，并把笔记里的链接改成你自己的。`,
+	archiveExplain: "已经下载不到的图片保留原链接，最后会列出清单。",
+	archiveStopHint: "可能要跑一段时间。想停就运行命令「停止正在进行的任务」；已经处理完的笔记不受影响，再运行一次会接着处理剩下的。",
+	archiveProgress: (done, total) => `R2：正在转存网络图片 ${done}/${total}…`,
+	stopping: "R2：处理完当前笔记就停…",
+	archiveDone: (saved, notes, failed) => `转存了 ${saved} 张图，改了 ${notes} 篇笔记。` + (failed ? `${failed} 张下载不到。` : ""),
+	archiveCancelled: "（中途停止）",
+	archiveReportTitle: "网络图片转存结果",
+	archiveFailedHint: "下面这些保留了原链接（一般是原网站已经删图或者不让下载）：",
+	archiveMore: (n) => `……还有 ${n} 条，点「复制清单」可以拿到全部。`,
+	copyList: "复制清单",
+	copied: "已复制。",
+	autoArchived: (saved, note, failed) => `R2：已转存「${note}」里的 ${saved} 张网络图片` + (failed ? `，${failed} 张失败` : ""),
+
+	secRemote: "网络图片",
+	autoArchive: "新笔记自动转存网络图片（本设备）",
+	autoArchiveDesc:
+		"下面的文件夹里出现新笔记时（网页剪藏，或者从别的设备同步过来），自动把里面的网络图片转存到 R2。这个开关只对当前设备生效：在一台经常开着的电脑上打开就够了。",
+	archiveFolders: "监视的文件夹",
+	archiveFoldersDesc: "多个用逗号隔开。留空表示整个库。",
+	archiveOnPaste: "粘贴网页内容后自动转存",
+	archiveOnPasteDesc: "从网页复制一段内容粘贴进笔记后，马上把里面的图片转存到 R2。",
+	givenUp: (n) => `有 ${n} 张网络图片已经失败两次，自动转存会跳过它们（手动命令仍会再试）。`,
+	clearFailures: "清空",
+	archiveVaultDesc: "把所有笔记里的网络图片下载下来存进 R2，并改写链接。执行前会先显示数量。",
+	reason: (raw) => {
+		const code = Number(/HTTP (\d+)/.exec(raw)?.[1]);
+		if (code === 404 || code === 410) return `已删除（${code}）`;
+		if (code === 401 || code === 403) return `不让下载（${code}）`;
+		if (code === 429) return "请求太频繁被限流，下次再试";
+		if (code >= 500) return `对方服务器出错（${code}），下次再试`;
+		if (raw.startsWith("too large")) return "文件太大（超过 50MB）";
+		return code ? `HTTP ${code}` : `连不上，下次再试（${raw}）`;
+	},
 };
 
 export const t: typeof en = getLanguage().toLowerCase().startsWith("zh") ? zh : en;

@@ -9,5 +9,5 @@ if (!vault) {
 }
 const dir = join(vault, ".obsidian", "plugins", "r2-image-uploader");
 mkdirSync(dir, { recursive: true });
-for (const f of ["main.js", "manifest.json"]) copyFileSync(f, join(dir, f));
+for (const f of ["main.js", "manifest.json", "styles.css"]) copyFileSync(f, join(dir, f));
 console.log("installed to", dir);

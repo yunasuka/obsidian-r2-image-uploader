@@ -1,4 +1,5 @@
 import { App, Notice, PluginSettingTab, requestUrl, SecretComponent, Setting } from "obsidian";
+import { GIVE_UP_AFTER, NOT_IMAGE } from "./archive";
 import { t } from "./i18n";
 import { DEFAULT_KEY_TEMPLATE, publicUrl } from "./naming";
 import type R2ImageUploader from "./main";
@@ -21,6 +22,10 @@ export interface R2UploaderSettings {
 	convertToWebp: boolean;
 	webpQuality: number;
 	afterUpload: "keep" | "trash";
+	archiveFolders: string;
+	archiveOnPaste: boolean;
+	/** Web image URL → failed download attempts. */
+	remoteFailures: Record<string, number>;
 	/** Vault paths of images saved locally because their upload failed. */
 	pending: string[];
 }
@@ -41,6 +46,9 @@ export const DEFAULT_SETTINGS: R2UploaderSettings = {
 	convertToWebp: false,
 	webpQuality: 0.85,
 	afterUpload: "keep",
+	archiveFolders: "Clippings",
+	archiveOnPaste: true,
+	remoteFailures: {},
 	pending: [],
 };
 
@@ -173,7 +181,40 @@ export class R2SettingTab extends PluginSettingTab {
 					.onChange((v) => ((s.afterUpload = v as R2UploaderSettings["afterUpload"]), save())),
 			);
 
+		new Setting(containerEl).setName(t.secRemote).setHeading();
+		new Setting(containerEl)
+			.setName(t.autoArchive)
+			.setDesc(t.autoArchiveDesc)
+			.addToggle((c) => c.setValue(this.plugin.autoArchive).onChange((v) => (this.plugin.autoArchive = v)));
+		new Setting(containerEl)
+			.setName(t.archiveFolders)
+			.setDesc(t.archiveFoldersDesc)
+			.addText((c) =>
+				c
+					.setPlaceholder("Clippings")
+					.setValue(s.archiveFolders)
+					.onChange((v) => ((s.archiveFolders = v), save())),
+			);
+		new Setting(containerEl)
+			.setName(t.archiveOnPaste)
+			.setDesc(t.archiveOnPasteDesc)
+			.addToggle((c) => c.setValue(s.archiveOnPaste).onChange((v) => ((s.archiveOnPaste = v), save())));
+		const givenUp = Object.values(s.remoteFailures).filter((n) => n >= GIVE_UP_AFTER && n < NOT_IMAGE).length;
+		if (givenUp) {
+			new Setting(containerEl).setDesc(t.givenUp(givenUp)).addButton((b) =>
+				b.setButtonText(t.clearFailures).onClick(async () => {
+					s.remoteFailures = {};
+					await save();
+					this.display();
+				}),
+			);
+		}
+
 		new Setting(containerEl).setName(t.secTools).setHeading();
+		new Setting(containerEl)
+			.setName(t.cmdArchiveVault)
+			.setDesc(t.archiveVaultDesc)
+			.addButton((b) => b.setButtonText(t.open).onClick(() => this.plugin.confirmArchiveVault()));
 		new Setting(containerEl)
 			.setName(t.cmdUploadVault)
 			.setDesc(t.uploadVaultDesc)

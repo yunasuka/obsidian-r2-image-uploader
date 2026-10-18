@@ -1,0 +1,16 @@
+.r2-uploader-report {
+	max-height: 50vh;
+	overflow-y: auto;
+	font-size: var(--font-ui-small);
+	user-select: text;
+}
+
+.r2-uploader-report ul {
+	margin-top: 0.2em;
+	word-break: break-all;
+	color: var(--text-muted);
+}
+
+.r2-uploader-report-note {
+	font-weight: var(--font-semibold);
+}

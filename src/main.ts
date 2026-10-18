@@ -1,5 +1,7 @@
-import { App, Editor, MarkdownFileInfo, MarkdownView, Modal, moment, Notice, Plugin, requestUrl, Setting, TFile } from "obsidian";
+import { Editor, MarkdownFileInfo, MarkdownView, moment, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
+import { ArchiveHost, emptyStats, RemoteArchiver, resetHostLimits } from "./archive";
 import { t } from "./i18n";
+import { ArchiveReportModal, ConfirmModal } from "./modals";
 import { extFromMime, imageMarkdown, mimeFromExt } from "./naming";
 import { HttpFn, R2Client } from "./r2";
 import { collectLocalImages, notesReferencing, rewriteNote, stillReferenced } from "./relink";
@@ -8,6 +10,11 @@ import { uploadImage, UploadOptions } from "./uploader";
 
 const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 const CONCURRENCY = 3;
+/** Wait after a note appears (Web Clipper, sync) before touching it. */
+const AUTO_DELAY_MS = 5000;
+/** On startup, notes in the watched folders changed within this window are checked. */
+const STARTUP_SCAN_DAYS = 14;
+const AUTO_ARCHIVE_KEY = "r2-image-uploader-auto-archive";
 
 // requestUrl goes through Electron / the native layer, so the bucket needs no CORS rules.
 const obsidianHttp: HttpFn = async ({ url, method, headers, body }) => {
@@ -47,9 +54,12 @@ interface RelinkResult {
 	changedNotes: number;
 }
 
-export default class R2ImageUploader extends Plugin {
+export default class R2ImageUploader extends Plugin implements ArchiveHost {
 	settings!: R2UploaderSettings;
 	private busy = false;
+	private stopRequested = false;
+	private readonly archiver = new RemoteArchiver(this);
+	private readonly autoTimers = new Map<string, number>();
 
 	async onload() {
 		await this.loadSettings();
@@ -70,6 +80,18 @@ export default class R2ImageUploader extends Plugin {
 		});
 		this.addCommand({ id: "upload-vault", name: t.cmdUploadVault, callback: () => this.confirmUploadVault() });
 		this.addCommand({ id: "retry-pending", name: t.cmdRetry, callback: () => this.retryPending(true) });
+		this.addCommand({
+			id: "archive-current-note",
+			name: t.cmdArchiveNote,
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension !== "md") return false;
+				if (!checking) void this.archiveNoteCommand(file);
+				return true;
+			},
+		});
+		this.addCommand({ id: "archive-vault", name: t.cmdArchiveVault, callback: () => this.confirmArchiveVault() });
+		this.addCommand({ id: "stop", name: t.cmdStop, callback: () => (this.stopRequested = true) });
 
 		// Keep the retry list in step with renames and deletions done by the user.
 		this.registerEvent(
@@ -90,7 +112,13 @@ export default class R2ImageUploader extends Plugin {
 			}),
 		);
 
-		this.app.workspace.onLayoutReady(() => window.setTimeout(() => void this.retryPending(false), 10_000));
+		this.app.workspace.onLayoutReady(() => {
+			window.setTimeout(() => void this.retryPending(false), 10_000);
+			// Registered only now: while the vault loads, "create" fires for every existing file.
+			this.registerEvent(this.app.vault.on("create", (f) => this.scheduleAutoArchive(f, true)));
+			this.registerEvent(this.app.vault.on("modify", (f) => this.scheduleAutoArchive(f, false)));
+			window.setTimeout(() => void this.startupArchiveScan(), 20_000);
+		});
 		this.registerInterval(window.setInterval(() => void this.retryPending(false), RETRY_INTERVAL_MS));
 		this.registerDomEvent(window, "online", () => void this.retryPending(false));
 	}
@@ -98,6 +126,7 @@ export default class R2ImageUploader extends Plugin {
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.settings.pending = [...(this.settings.pending ?? [])];
+		this.settings.remoteFailures = { ...(this.settings.remoteFailures ?? {}) };
 	}
 
 	async saveSettings() {
@@ -122,7 +151,7 @@ export default class R2ImageUploader extends Plugin {
 		);
 	}
 
-	private uploadOptions(): UploadOptions {
+	uploadOptions(): UploadOptions {
 		const s = this.settings;
 		return { publicUrl: s.publicUrl, keyTemplate: s.keyTemplate, convertToWebp: s.convertToWebp, webpQuality: s.webpQuality };
 	}
@@ -132,8 +161,16 @@ export default class R2ImageUploader extends Plugin {
 	private onPaste(evt: ClipboardEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) {
 		if (evt.defaultPrevented || !this.settings.uploadOnPaste || !evt.clipboardData) return;
 		const files = imageFiles(evt.clipboardData.files);
+		if (!files.length) {
+			// Pasted a piece of a web page: let Obsidian convert it, then save its images.
+			const note = info.file;
+			if (note && this.settings.archiveOnPaste && /<img\b/i.test(evt.clipboardData.getData("text/html")) && this.client()) {
+				window.setTimeout(() => void this.autoArchiveNote(note), 1500);
+			}
+			return;
+		}
 		// Spreadsheets and rich text put a picture of the selection on the clipboard too.
-		if (!files.length || evt.clipboardData.getData("text/plain").trim()) return;
+		if (evt.clipboardData.getData("text/plain").trim()) return;
 		const client = this.client();
 		if (!client) {
 			new Notice(t.notConfigured);
@@ -314,35 +351,142 @@ export default class R2ImageUploader extends Plugin {
 			if (r.urls.size || manual) new Notice(t.retryDone(r.urls.size, this.settings.pending.length), 6000);
 		}, !manual);
 	}
-}
 
-class ConfirmModal extends Modal {
-	constructor(
-		app: App,
-		private readonly heading: string,
-		private readonly lines: string[],
-		private readonly onConfirm: () => void,
-	) {
-		super(app);
+	// ---- remote images (clipped web pages) ----
+
+	failures(): Record<string, number> {
+		return this.settings.remoteFailures;
 	}
 
-	onOpen() {
-		this.setTitle(this.heading);
-		for (const line of this.lines) this.contentEl.createEl("p", { text: line });
-		new Setting(this.contentEl)
-			.addButton((b) => b.setButtonText(t.cancel).onClick(() => this.close()))
-			.addButton((b) =>
-				b
-					.setButtonText(t.start)
-					.setCta()
-					.onClick(() => {
-						this.close();
-						this.onConfirm();
-					}),
-			);
+	async saveFailures() {
+		await this.saveSettings();
 	}
 
-	onClose() {
-		this.contentEl.empty();
+	isOwnUrl(url: string): boolean {
+		const base = this.settings.publicUrl.trim().replace(/\/+$/, "");
+		return !!base && url.startsWith(base + "/");
+	}
+
+	/** Automatic saving is a per-device choice: one always-on device is enough. */
+	get autoArchive(): boolean {
+		return this.app.loadLocalStorage(AUTO_ARCHIVE_KEY) === "on";
+	}
+
+	set autoArchive(on: boolean) {
+		this.app.saveLocalStorage(AUTO_ARCHIVE_KEY, on ? "on" : null);
+	}
+
+	private inWatchedFolder(path: string): boolean {
+		const folders = this.settings.archiveFolders
+			.split(/[,\n]/)
+			.map((f) => f.trim().replace(/^\/+|\/+$/g, ""))
+			.filter(Boolean);
+		return !folders.length || folders.some((f) => path.startsWith(f + "/"));
+	}
+
+	private scheduleAutoArchive(file: TAbstractFile, created: boolean) {
+		if (!(file instanceof TFile) || file.extension !== "md") return;
+		const timer = this.autoTimers.get(file.path);
+		// Modifications only matter right after creation (a clipper may write in steps).
+		if (!created && timer === undefined) return;
+		if (!this.autoArchive || !this.inWatchedFolder(file.path)) return;
+		window.clearTimeout(timer);
+		this.autoTimers.set(
+			file.path,
+			window.setTimeout(() => {
+				this.autoTimers.delete(file.path);
+				void this.autoArchiveNote(file);
+			}, AUTO_DELAY_MS),
+		);
+	}
+
+	/** Quiet run for one note: no report, failed images are retried a limited number of times. */
+	private async autoArchiveNote(note: TFile) {
+		const client = this.client();
+		if (!client || !this.app.vault.getFileByPath(note.path)) return;
+		const stats = emptyStats();
+		await this.archiver.archiveNote(client, note, stats, { includeGivenUp: false });
+		if (stats.failed.length) console.warn("R2 Image Uploader: could not save", stats.failed);
+		if (stats.notes) new Notice(t.autoArchived(stats.saved, note.basename, stats.failed.length), 5000);
+	}
+
+	/** Catches notes that arrived while Obsidian was closed. */
+	private async startupArchiveScan() {
+		if (!this.autoArchive || !this.client()) return;
+		const since = Date.now() - STARTUP_SCAN_DAYS * 86400_000;
+		for (const note of this.app.vault.getMarkdownFiles()) {
+			if (note.stat.mtime < since || !this.inWatchedFolder(note.path)) continue;
+			if (this.archiver.pendingUrls(await this.app.vault.cachedRead(note), false).length) await this.autoArchiveNote(note);
+		}
+	}
+
+	async archiveNoteCommand(note: TFile) {
+		const client = this.client();
+		if (!client) return void new Notice(t.notConfigured);
+		const total = this.archiver.pendingUrls(await this.app.vault.read(note), true).length;
+		if (!total) return void new Notice(t.noRemoteImages);
+		const stats = emptyStats();
+		resetHostLimits();
+		const progress = new Notice(t.archiveProgress(0, total), 0);
+		let done = 0;
+		try {
+			await this.archiver.archiveNote(client, note, stats, {
+				includeGivenUp: true,
+				onImage: () => progress.setMessage(t.archiveProgress(++done, total)),
+			});
+		} finally {
+			progress.hide();
+		}
+		if (stats.failed.length) new ArchiveReportModal(this.app, stats, false).open();
+		else new Notice(t.archiveDone(stats.saved, stats.notes, 0), 6000);
+	}
+
+	async confirmArchiveVault() {
+		if (!this.client()) return void new Notice(t.notConfigured);
+		const scanning = new Notice(t.scanning, 0);
+		const notes: TFile[] = [];
+		const unique = new Set<string>();
+		let total = 0;
+		try {
+			for (const note of this.app.vault.getMarkdownFiles()) {
+				const urls = this.archiver.pendingUrls(await this.app.vault.cachedRead(note), true);
+				if (!urls.length) continue;
+				notes.push(note);
+				total += urls.length;
+				urls.forEach((u) => unique.add(u));
+			}
+		} finally {
+			scanning.hide();
+		}
+		if (!notes.length) return void new Notice(t.noRemoteImages);
+		new ConfirmModal(this.app, t.archiveTitle, [t.archiveSummary(unique.size, notes.length), t.archiveExplain, t.archiveStopHint, t.migrateBackup], () =>
+			this.runExclusive((client) => this.archiveVault(client, notes, total)),
+		).open();
+	}
+
+	private async archiveVault(client: R2Client, notes: TFile[], total: number) {
+		this.stopRequested = false;
+		resetHostLimits();
+		const stats = emptyStats();
+		let done = 0;
+		const progress = new Notice("", 0);
+		const update = () => progress.setMessage(this.stopRequested ? t.stopping : t.archiveProgress(done, total));
+		update();
+		try {
+			for (const note of notes) {
+				if (this.stopRequested) break;
+				await this.archiver.archiveNote(client, note, stats, {
+					includeGivenUp: true,
+					onImage: () => {
+						done++;
+						update();
+					},
+				});
+			}
+		} finally {
+			progress.hide();
+		}
+		new ArchiveReportModal(this.app, stats, this.stopRequested).open();
+		this.stopRequested = false;
 	}
 }
