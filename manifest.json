@@ -1,0 +1,9 @@
+{
+  "id": "r2-image-uploader",
+  "name": "R2 Image Uploader",
+  "version": "0.1.0",
+  "minAppVersion": "1.11.4",
+  "description": "Paste or drop images and they are uploaded to Cloudflare R2, with a public link inserted into the note. Can also migrate existing local images.",
+  "author": "yunasuka",
+  "isDesktopOnly": false
+}
