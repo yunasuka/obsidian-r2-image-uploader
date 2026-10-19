@@ -50,7 +50,7 @@ const en = {
 	keyTemplateDesc:
 		"Placeholders: {hash} (content hash, so the same image is stored once), {hash:N}, {ext}, {name}, {year}, {month}, {day}, {timestamp}. Slashes create folders.",
 	webp: "Convert to WebP",
-	webpDesc: "PNG / JPEG / BMP are converted before upload; the original is kept if WebP is not smaller. GIF and SVG are never converted.",
+	webpDesc: "PNG / JPEG / BMP are converted before upload; the original is kept if WebP is not smaller. GIF, SVG and animated PNG are never converted.",
 	webpQuality: "WebP quality",
 	afterUpload: "After uploading local files",
 	afterUploadDesc: "Applies to the upload commands. Files only go to trash when no note embeds them any more.",
@@ -162,7 +162,7 @@ const zh: typeof en = {
 	keyTemplateDesc:
 		"可用占位符：{hash}（内容哈希，同一张图只存一份）、{hash:N}、{ext}、{name}、{year}、{month}、{day}、{timestamp}。用斜杠可以分文件夹。",
 	webp: "转成 WebP",
-	webpDesc: "PNG / JPEG / BMP 上传前转成 WebP，转完没变小就传原图。GIF 和 SVG 不转。",
+	webpDesc: "PNG / JPEG / BMP 上传前转成 WebP，转完没变小就传原图。GIF、SVG 和动态 PNG 不转。",
 	webpQuality: "WebP 质量",
 	afterUpload: "上传本地文件后",
 	afterUploadDesc: "用于上传命令。只有在没有任何笔记再引用它时，才会移到回收站。",

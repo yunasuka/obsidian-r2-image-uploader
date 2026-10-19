@@ -1,7 +1,7 @@
 {
   "id": "cloudflare-image-uploader",
   "name": "Cloudflare Image Uploader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "minAppVersion": "1.11.4",
   "description": "Save the images of clipped web pages into your own Cloudflare R2 bucket so they never disappear, and upload pasted or dropped images to R2.",
   "author": "yunasuka",

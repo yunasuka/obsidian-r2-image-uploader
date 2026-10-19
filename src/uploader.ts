@@ -1,5 +1,6 @@
 import { extFromMime, publicUrl, renderKey } from "./naming";
 import { R2Client } from "./r2";
+import { isAnimatedPng } from "./remote";
 import { sha256Hex } from "./sigv4";
 
 const CONVERTIBLE = new Set(["image/png", "image/jpeg", "image/bmp"]);
@@ -34,7 +35,7 @@ export async function toWebp(data: ArrayBuffer, mime: string, quality: number): 
 export async function uploadImage(client: R2Client, opts: UploadOptions, data: ArrayBuffer, mime: string, fileName: string): Promise<string> {
 	let body = data;
 	let type = mime;
-	if (opts.convertToWebp && CONVERTIBLE.has(mime)) {
+	if (opts.convertToWebp && CONVERTIBLE.has(mime) && !(mime === "image/png" && isAnimatedPng(data))) {
 		try {
 			const webp = await toWebp(data, mime, opts.webpQuality);
 			if (webp && webp.byteLength < data.byteLength) {

@@ -79,6 +79,18 @@ export function sniffImage(buf: ArrayBuffer, contentType = ""): string | null {
 	return null;
 }
 
+/** APNG shares the PNG signature; it has an acTL chunk before the first IDAT. Re-encoding would keep only frame one. */
+export function isAnimatedPng(buf: ArrayBuffer): boolean {
+	const view = new DataView(buf);
+	for (let i = 8; i + 8 <= buf.byteLength; ) {
+		const type = String.fromCharCode(...new Uint8Array(buf, i + 4, 4));
+		if (type === "acTL") return true;
+		if (type === "IDAT" || type === "IEND") return false;
+		i += 12 + view.getUint32(i);
+	}
+	return false;
+}
+
 /** A readable file name for {name}, from the last path segment of the URL. */
 export function nameFromUrl(url: string): string {
 	try {

@@ -22,7 +22,7 @@ Clipped web pages only *link* to their images. When the author deletes the post 
 
 **General**
 - **Content-hash file names** (`{hash}.{ext}` by default): the same image is stored once, links never change.
-- **Optional WebP conversion** before upload (kept only if it is smaller; GIF/SVG untouched).
+- **Optional WebP conversion** before upload (kept only if it is smaller; GIF/SVG/animated PNG untouched).
 - Keys stay on the device by default (Obsidian secret storage); optional *Sync keys with the vault*.
 - Desktop and mobile; no dependencies, small SigV4 signer on Web Crypto; uses Obsidian's `requestUrl`, so the bucket needs no CORS rules.
 

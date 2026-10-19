@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findRemoteImages, nameFromUrl, replaceRemoteImages, sniffImage } from "../src/remote";
+import { findRemoteImages, isAnimatedPng, nameFromUrl, replaceRemoteImages, sniffImage } from "../src/remote";
 
 const urls = (text: string, own?: (u: string) => boolean) => findRemoteImages(text, own).map((i) => i.url);
 
@@ -60,6 +60,14 @@ describe("helpers", () => {
 		expect(sniffImage(new TextEncoder().encode("RIFF\0\0\0\0WEBPVP8 ").buffer)).toBe("image/webp");
 		expect(sniffImage(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>').buffer)).toBe("image/svg+xml");
 		expect(sniffImage(new TextEncoder().encode("<!doctype html><html>").buffer, "image/png")).toBeNull();
+	});
+	it("isAnimatedPng", () => {
+		const chunk = (type: string, len = 0) => [0, 0, 0, len, ...new TextEncoder().encode(type), ...new Array<number>(len + 4).fill(0)];
+		const png = (...chunks: number[][]) => bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...chunks.flat());
+		expect(isAnimatedPng(png(chunk("IHDR", 13), chunk("acTL", 8), chunk("IDAT", 2), chunk("IEND")))).toBe(true);
+		expect(isAnimatedPng(png(chunk("IHDR", 13), chunk("IDAT", 2), chunk("IEND")))).toBe(false);
+		expect(isAnimatedPng(png(chunk("IHDR", 13), chunk("IDAT", 2), chunk("acTL", 8)))).toBe(false);
+		expect(isAnimatedPng(png(chunk("IHDR", 13)).slice(0, 20))).toBe(false);
 	});
 	it("nameFromUrl", () => {
 		expect(nameFromUrl("https://pbs.twimg.com/media/GxAbC?format=jpg")).toBe("GxAbC");
