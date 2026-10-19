@@ -1,4 +1,4 @@
-import { Editor, MarkdownFileInfo, MarkdownView, moment, normalizePath, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
+import { Editor, MarkdownFileInfo, MarkdownView, normalizePath, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
 import { ArchiveHost, emptyStats, RemoteArchiver, resetHostLimits } from "./archive";
 import { t } from "./i18n";
 import { ArchiveReportModal, ConfirmModal } from "./modals";
@@ -36,6 +36,12 @@ const obsidianHttp: HttpFn = async ({ url, method, headers, body }) => {
 function imageFiles(list: FileList | null | undefined): File[] {
 	const files = Array.from(list ?? []);
 	return files.length && files.every((f) => f.type.startsWith("image/")) ? files : [];
+}
+
+/** YYYYMMDDHHmmss, the same stamp Obsidian uses for pasted images. */
+function timestamp(d = new Date()): string {
+	const p = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
 function errorText(e: unknown): string {
@@ -225,7 +231,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 				} catch (e) {
 					console.error("Cloudflare Image Uploader: upload failed", e);
 					errors.push(errorText(e));
-					const name = pasted ? `Pasted image ${moment().format("YYYYMMDDHHmmss")}.${extFromMime(mime, file.name)}` : file.name;
+					const name = pasted ? `Pasted image ${timestamp()}.${extFromMime(mime, file.name)}` : file.name;
 					replacement = await this.saveLocally(data, name, note);
 				}
 				await this.replacePlaceholder(editor, note, placeholder, replacement);
