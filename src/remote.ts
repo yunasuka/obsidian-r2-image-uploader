@@ -10,7 +10,8 @@ export interface RemoteImage {
 
 const MD_IMAGE = /!\[((?:[^[\]\n]|\[[^\]\n]*\])*)\]\(\s*(<[^>\n]+>|(?:[^()\s]|\([^()\s]*\))+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/g;
 const HTML_IMG = /<img\b[^>]*?\bsrc\s*=\s*(["'])([^"'\n]*?)\1[^>]*>/gi;
-const FENCE = /^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:\n {0,3}\1[`~]*[ \t]*(?=\n|$)|$)/gm;
+// Runs to the closing fence line, or to the end of the note if never closed. Notes may use CRLF.
+const FENCE = /^ {0,3}(`{3,}|~{3,})[^\n]*\n(?:(?:[^\n]*\n)*? {0,3}\1[`~]*[ \t]*\r?$|[\s\S]*)/gm;
 const INLINE_CODE = /`[^`\n]+`/g;
 
 function codeRanges(text: string): [number, number][] {

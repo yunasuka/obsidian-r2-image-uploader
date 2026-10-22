@@ -40,6 +40,14 @@ describe("findRemoteImages", () => {
 		expect(urls(text, (u) => u.startsWith("https://img.mine.dev/"))).toEqual(["https://example.com/after.png"]);
 	});
 
+	it("ends fenced code at its closing line, with LF or CRLF", () => {
+		const lines = ["```", "line 1", "![x](https://example.com/fenced.png)", "```", "![x](https://example.com/a.png)", "```", "```", "![x](https://example.com/b.png)"];
+		for (const eol of ["\n", "\r\n"]) {
+			expect(urls(lines.join(eol))).toEqual(["https://example.com/a.png", "https://example.com/b.png"]);
+			expect(urls(["~~~", "![x](https://example.com/open.png)", ""].join(eol))).toEqual([]);
+		}
+	});
+
 	it("replace keeps everything else", () => {
 		const text = '前 ![a](https://x.com/1.png "t") 中 <img src="https://x.com/2.png?a=1&amp;b=2"> 后 ![b](https://x.com/3.png)';
 		const map = new Map([

@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: R2UploaderSettings = {
 	convertToWebp: false,
 	webpQuality: 0.85,
 	afterUpload: "keep",
-	archiveFolders: "Clippings",
+	archiveFolders: "",
 	archiveOnPaste: true,
 	remoteFailures: {},
 	sources: {},
@@ -193,7 +193,7 @@ export class R2SettingTab extends PluginSettingTab {
 			.setDesc(t.archiveFoldersDesc)
 			.addText((c) =>
 				c
-					.setPlaceholder("Clippings")
+					.setPlaceholder(t.wholeVault)
 					.setValue(s.archiveFolders)
 					.onChange((v) => ((s.archiveFolders = v), save())),
 			);

@@ -1,7 +1,7 @@
 {
   "name": "cloudflare-image-uploader",
-  "version": "1.0.4",
-  "description": "Paste or drop images into Obsidian and upload them to Cloudflare R2 automatically.",
+  "version": "1.0.5",
+  "description": "Save web images in your notes to your own Cloudflare R2 bucket, and upload pasted or dropped images.",
   "main": "main.js",
   "type": "module",
   "scripts": {
