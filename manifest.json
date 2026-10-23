@@ -1,7 +1,7 @@
 {
   "id": "cloudflare-image-uploader",
   "name": "Cloudflare Image Uploader",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "minAppVersion": "1.11.4",
   "description": "Save web images in your notes to your own Cloudflare R2 bucket, and upload pasted or dropped images.",
   "author": "yunasuka",

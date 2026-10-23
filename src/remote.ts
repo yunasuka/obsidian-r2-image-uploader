@@ -9,7 +9,8 @@ export interface RemoteImage {
 }
 
 const MD_IMAGE = /!\[((?:[^[\]\n]|\[[^\]\n]*\])*)\]\(\s*(<[^>\n]+>|(?:[^()\s]|\([^()\s]*\))+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/g;
-const HTML_IMG = /<img\b[^>]*?\bsrc\s*=\s*(["'])([^"'\n]*?)\1[^>]*>/gi;
+// Not data-src and the like: Obsidian shows what src points at.
+const HTML_IMG = /<img\b[^>]*?(?<![\w-])src\s*=\s*(["'])([^"'\n]*?)\1[^>]*>/gi;
 // Runs to the closing fence line, or to the end of the note if never closed. Notes may use CRLF.
 const FENCE = /^ {0,3}(`{3,}|~{3,})[^\n]*\n(?:(?:[^\n]*\n)*? {0,3}\1[`~]*[ \t]*\r?$|[\s\S]*)/gm;
 const INLINE_CODE = /`[^`\n]+`/g;
@@ -50,7 +51,7 @@ export function findRemoteImages(text: string, isOwn: (url: string) => boolean =
 	HTML_IMG.lastIndex = 0;
 	for (let m; (m = HTML_IMG.exec(text)); ) {
 		const raw = m[2];
-		push(m.index + m[0].indexOf(raw, m[0].search(/\bsrc\s*=/i)), raw, decodeEntities(raw));
+		push(m.index + m[0].indexOf(raw, m[0].search(/(?<![\w-])src\s*=/i)), raw, decodeEntities(raw));
 	}
 	return out.sort((a, b) => a.start - b.start);
 }

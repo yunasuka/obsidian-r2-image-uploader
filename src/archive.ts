@@ -1,6 +1,6 @@
 // Saving remote images (from clipped web pages) into R2 and pointing the note at the copy.
 
-import { App, MarkdownView, requestUrl, TFile } from "obsidian";
+import { App, Editor, MarkdownView, requestUrl, TFile } from "obsidian";
 import { findRemoteImages, nameFromUrl, replaceRemoteImages, sniffImage } from "./remote";
 import type { R2Client } from "./r2";
 import { uploadImage, UploadOptions } from "./uploader";
@@ -9,15 +9,22 @@ const CONCURRENCY = 4;
 /** Politeness towards each source site; forums like linux.do rate-limit quickly. */
 const PER_HOST = 2;
 const HOST_GAP_MS = 300;
-/** After this many rate-limited images in a row, a host is skipped for the rest of the run. */
+/** After this many rate-limited images in a row, a host is skipped for a while. */
 const HOST_STRIKES = 5;
+const HOST_BLOCK_MS = 30 * 60 * 1000;
 const MAX_BYTES = 50 * 1024 * 1024;
 // Some CDNs (v2ex, Cloudflare-fronted sites) reject Electron's default user agent.
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 /** Failure count at which automatic runs stop retrying a URL. Manual runs always retry. */
 export const GIVE_UP_AFTER = 2;
+/** Stored for URLs whose original link was put back on purpose; only manual runs save them again. */
+export const KEEP_ORIGINAL = 98;
 /** Stored for URLs that answered with something other than an image (web page embeds etc.). */
 export const NOT_IMAGE = 99;
+
+/** Who asked: automatic runs skip given-up URLs, the whole-vault run also skips restored links, a single note retries everything. */
+export type ArchiveRun = "auto" | "vault" | "note";
+const RETRY_BELOW: Record<ArchiveRun, number> = { auto: GIVE_UP_AFTER, vault: KEEP_ORIGINAL, note: NOT_IMAGE };
 
 export interface ArchiveFailure {
 	note: string;
@@ -45,18 +52,24 @@ class HostGate {
 	private readonly active = new Map<string, number>();
 	private readonly notBefore = new Map<string, number>();
 	private readonly strikes = new Map<string, number>();
+	private readonly blockedUntil = new Map<string, number>();
 
 	blocked(host: string): boolean {
-		return (this.strikes.get(host) ?? 0) >= HOST_STRIKES;
+		if ((this.blockedUntil.get(host) ?? 0) > Date.now()) return true;
+		if (this.blockedUntil.delete(host)) this.strikes.delete(host);
+		return false;
 	}
 
 	result(host: string, rateLimited: boolean) {
-		this.strikes.set(host, rateLimited ? (this.strikes.get(host) ?? 0) + 1 : 0);
+		const strikes = rateLimited ? (this.strikes.get(host) ?? 0) + 1 : 0;
+		this.strikes.set(host, strikes);
+		if (strikes >= HOST_STRIKES) this.blockedUntil.set(host, Date.now() + HOST_BLOCK_MS);
 	}
 
-	/** Called at the start of each manual run so earlier strikes don't carry over forever. */
+	/** Called at the start of each manual run so earlier strikes don't carry over. */
 	reset() {
 		this.strikes.clear();
+		this.blockedUntil.clear();
 	}
 
 	async run<T>(host: string, fn: () => Promise<T>): Promise<T> {
@@ -138,17 +151,31 @@ export class RemoteArchiver {
 	constructor(private readonly host: ArchiveHost) {}
 
 	/** Remote image URLs of a note that are worth trying. */
-	pendingUrls(text: string, includeGivenUp: boolean): string[] {
+	pendingUrls(text: string, run: ArchiveRun): string[] {
 		const failures = this.host.failures();
 		const urls = new Set(findRemoteImages(text, (u) => this.host.isOwnUrl(u)).map((i) => i.url));
-		return [...urls].filter((u) => (failures[u] ?? 0) < (includeGivenUp ? NOT_IMAGE : GIVE_UP_AFTER));
+		return [...urls].filter((u) => (failures[u] ?? 0) < RETRY_BELOW[run]);
 	}
 
-	async archiveNote(client: R2Client, note: TFile, stats: ArchiveStats, opts: { includeGivenUp: boolean; onImage?: () => void }): Promise<void> {
+	/** The editor of the note if it is open for editing; it can be ahead of the file on disk. */
+	private openEditor(note: TFile): Editor | null {
+		for (const leaf of this.host.app.workspace.getLeavesOfType("markdown")) {
+			const view = leaf.view;
+			if (view instanceof MarkdownView && view.file === note && view.getMode() === "source") return view.editor;
+		}
+		return null;
+	}
+
+	/** Current text of a note, including edits (like a paste) that are not saved yet. */
+	async noteText(note: TFile): Promise<string> {
+		return this.openEditor(note)?.getValue() ?? (await this.host.app.vault.read(note));
+	}
+
+	async archiveNote(client: R2Client, note: TFile, stats: ArchiveStats, opts: { run: ArchiveRun; onImage?: () => void }): Promise<void> {
 		if (this.busyNotes.has(note.path)) return;
 		this.busyNotes.add(note.path);
 		try {
-			const urls = this.pendingUrls(await this.host.app.vault.read(note), opts.includeGivenUp);
+			const urls = this.pendingUrls(await this.noteText(note), opts.run);
 			if (!urls.length) return;
 			const failures = this.host.failures();
 			const map = new Map<string, string>();
@@ -160,7 +187,10 @@ export class RemoteArchiver {
 						let saved = this.done.get(url);
 						if (!saved) {
 							const { data, mime } = await download(url);
-							saved = await uploadImage(client, this.host.uploadOptions(), data, mime, nameFromUrl(url));
+							// An R2 problem says nothing about the web image, so it must not count against it.
+							saved = await uploadImage(client, this.host.uploadOptions(), data, mime, nameFromUrl(url)).catch((e: unknown) => {
+								throw new Temporary(e instanceof Error ? e.message : String(e));
+							});
 							this.done.set(url, saved);
 							stats.saved++;
 						}
@@ -190,10 +220,8 @@ export class RemoteArchiver {
 
 	/** Writes the new URLs, through the editor when the note is open so typing isn't clobbered. */
 	async apply(note: TFile, map: Map<string, string>, isOwn: (url: string) => boolean = (u) => this.host.isOwnUrl(u)) {
-		for (const leaf of this.host.app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view;
-			if (!(view instanceof MarkdownView) || view.file !== note || view.getMode() !== "source") continue;
-			const editor = view.editor;
+		const editor = this.openEditor(note);
+		if (editor) {
 			// Synchronous from read to write, so the offsets are still valid.
 			const images = findRemoteImages(editor.getValue(), isOwn).filter((i) => map.has(i.url));
 			for (const img of images.reverse()) {

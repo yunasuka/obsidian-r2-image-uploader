@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, requestUrl, SecretComponent, Setting } from "obsidian";
-import { GIVE_UP_AFTER, NOT_IMAGE } from "./archive";
+import { GIVE_UP_AFTER, KEEP_ORIGINAL } from "./archive";
 import { t } from "./i18n";
 import { DEFAULT_KEY_TEMPLATE, publicUrl } from "./naming";
 import type R2ImageUploader from "./main";
@@ -203,11 +203,12 @@ export class R2SettingTab extends PluginSettingTab {
 			.addToggle((c) => c.setValue(s.archiveOnPaste).onChange((v) => ((s.archiveOnPaste = v), save())));
 		const recorded = Object.keys(s.sources).length;
 		if (recorded) new Setting(containerEl).setDesc(t.sourcesRecorded(recorded));
-		const givenUp = Object.values(s.remoteFailures).filter((n) => n >= GIVE_UP_AFTER && n < NOT_IMAGE).length;
+		const givenUp = Object.values(s.remoteFailures).filter((n) => n >= GIVE_UP_AFTER && n < KEEP_ORIGINAL).length;
 		if (givenUp) {
 			new Setting(containerEl).setDesc(t.givenUp(givenUp)).addButton((b) =>
 				b.setButtonText(t.clearFailures).onClick(async () => {
-					s.remoteFailures = {};
+					// Links restored on purpose stay as they are.
+					for (const [url, n] of Object.entries(s.remoteFailures)) if (n !== KEEP_ORIGINAL) delete s.remoteFailures[url];
 					await save();
 					this.display();
 				}),

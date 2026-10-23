@@ -25,6 +25,14 @@ describe("findRemoteImages", () => {
 		expect(urls('<p><img alt="x" src="https://a.com/i.png?x=1&amp;y=2" width="300"></p>')).toEqual(["https://a.com/i.png?x=1&y=2"]);
 	});
 
+	it("html img uses src, not data-src", () => {
+		const text = '<img data-src="https://a.com/lazy.png" src="https://a.com/shown.png">';
+		const [img] = findRemoteImages(text);
+		expect(img.url).toBe("https://a.com/shown.png");
+		expect(text.slice(img.start, img.end)).toBe("https://a.com/shown.png");
+		expect(urls('<img data-src="https://a.com/lazy.png">')).toEqual([]);
+	});
+
 	it("skips local images, plain links, code and own URLs", () => {
 		const text = [
 			"![[local.png]]",

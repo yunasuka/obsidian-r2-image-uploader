@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-image-uploader",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Save web images in your notes to your own Cloudflare R2 bucket, and upload pasted or dropped images.",
   "main": "main.js",
   "type": "module",

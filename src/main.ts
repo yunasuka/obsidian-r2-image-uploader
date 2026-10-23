@@ -1,5 +1,5 @@
 import { Editor, MarkdownFileInfo, MarkdownView, normalizePath, Notice, Plugin, requestUrl, TAbstractFile, TFile } from "obsidian";
-import { ArchiveHost, emptyStats, RemoteArchiver, resetHostLimits } from "./archive";
+import { ArchiveHost, emptyStats, KEEP_ORIGINAL, RemoteArchiver, resetHostLimits } from "./archive";
 import { t } from "./i18n";
 import { ArchiveReportModal, ConfirmModal } from "./modals";
 import { findRemoteImages } from "./remote";
@@ -387,7 +387,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 
 	/** Puts the original web addresses back for images that were saved from the web. */
 	async restoreOriginalLinks(note: TFile) {
-		const text = await this.app.vault.read(note);
+		const text = await this.archiver.noteText(note);
 		const map = new Map<string, string>();
 		for (const img of findRemoteImages(text)) {
 			const source = this.settings.sources[img.url];
@@ -396,6 +396,9 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		if (!map.size) return void new Notice(t.nothingToRestore);
 		// Treat nothing as "own" so the R2 links themselves are found and replaced.
 		await this.archiver.apply(note, map, () => false);
+		// Otherwise automatic saving would swap them back to R2 the next time it looks at the note.
+		for (const source of map.values()) this.settings.remoteFailures[source] = KEEP_ORIGINAL;
+		await this.saveSettings();
 		new Notice(t.restored(map.size), 6000);
 	}
 
@@ -442,7 +445,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		const client = this.client();
 		if (!client || !this.app.vault.getFileByPath(note.path)) return;
 		const stats = emptyStats();
-		await this.archiver.archiveNote(client, note, stats, { includeGivenUp: false });
+		await this.archiver.archiveNote(client, note, stats, { run: "auto" });
 		if (stats.failed.length) console.warn("Cloudflare Image Uploader: could not save", stats.failed);
 		if (stats.notes) new Notice(t.autoArchived(stats.saved, note.basename, stats.failed.length), 5000);
 	}
@@ -453,14 +456,14 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		const since = Date.now() - STARTUP_SCAN_DAYS * 86400_000;
 		for (const note of this.app.vault.getMarkdownFiles()) {
 			if (note.stat.mtime < since || !this.inWatchedFolder(note.path)) continue;
-			if (this.archiver.pendingUrls(await this.app.vault.cachedRead(note), false).length) await this.autoArchiveNote(note);
+			if (this.archiver.pendingUrls(await this.app.vault.cachedRead(note), "auto").length) await this.autoArchiveNote(note);
 		}
 	}
 
 	async archiveNoteCommand(note: TFile) {
 		const client = this.client();
 		if (!client) return void new Notice(t.notConfigured);
-		const total = this.archiver.pendingUrls(await this.app.vault.read(note), true).length;
+		const total = this.archiver.pendingUrls(await this.archiver.noteText(note), "note").length;
 		if (!total) return void new Notice(t.noRemoteImages);
 		const stats = emptyStats();
 		resetHostLimits();
@@ -468,7 +471,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		let done = 0;
 		try {
 			await this.archiver.archiveNote(client, note, stats, {
-				includeGivenUp: true,
+				run: "note",
 				onImage: () => progress.setMessage(t.archiveProgress(++done, total)),
 			});
 		} finally {
@@ -486,7 +489,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 		let total = 0;
 		try {
 			for (const note of this.app.vault.getMarkdownFiles()) {
-				const urls = this.archiver.pendingUrls(await this.app.vault.cachedRead(note), true);
+				const urls = this.archiver.pendingUrls(await this.app.vault.cachedRead(note), "vault");
 				if (!urls.length) continue;
 				notes.push(note);
 				total += urls.length;
@@ -513,7 +516,7 @@ export default class R2ImageUploader extends Plugin implements ArchiveHost {
 			for (const note of notes) {
 				if (this.stopRequested) break;
 				await this.archiver.archiveNote(client, note, stats, {
-					includeGivenUp: true,
+					run: "vault",
 					onImage: () => {
 						done++;
 						update();
